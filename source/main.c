@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <termios.h>
 
 typedef struct {
     char *value;
@@ -124,6 +126,41 @@ void printFile(FILE *file){
     }
 }
 
+void switchToAlternateTerminalScreenBuffer(){
+    printf("\033[?1049h");
+    fflush(stdout);
+}
+
+void stayInAltScreenBufferUnlessQ(){
+    bool leave = false;
+    char character;
+    while(leave == false){
+        printf("This is the alternate screen buffer. Press 'q' to exit.\n");
+        character = getchar();
+        if(character == 'q'){
+            leave = true;
+            printf("\nThank you. Now leaving...\n");
+            fflush(stdout);
+            sleep(2);
+            printf("\033[2J");
+            fflush(stdout);
+        }else{
+            printf("Thank you. You pressed: '%c', (%d)", character, character);
+        }
+    }
+    printf("\033[?1049l");
+    fflush(stdout);
+}
+
+struct termios setUpTerminal(){
+    struct termios terminal;
+    tcgetattr(STDIN_FILENO, &terminal);
+    struct termios returnValue = terminal;
+    terminal.c_lflag &= ~(ICANON |ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &terminal);
+    return returnValue;
+}
+
 int main(int argc, char *argv[]) {
     if(checkArgs(argc, argv) == 1){
         return 1;
@@ -138,6 +175,15 @@ int main(int argc, char *argv[]) {
     printf("Same in reverse: %i\n", indexOf(testString, testSearchString, 0, false));
     FILE *practiceFile = fopen(filePath, "r");
     printFile(practiceFile);
-    printf("\033[2J");
+    sleep(1);
+    struct termios terminalStartSettings = setUpTerminal();
+    sleep(1);
+    printf("Terminal is set up; press 'y' to continue\n");
+    while(getchar() != 'y'){
+        printf("press 'y' to continue\n");
+    }
+    switchToAlternateTerminalScreenBuffer();
+    stayInAltScreenBufferUnlessQ();
+    tcsetattr(STDIN_FILENO, TCSANOW, &terminalStartSettings);
     return 0;
 }
