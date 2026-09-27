@@ -90,11 +90,26 @@ int getStringLength(char *string){
 }
 
 menuOption createMenuOption(char keyPress, char *message, void (*action)(void)){
-    int textLength = getStringLength(message);
-    char *template = " [%c] - %s";
-    int templateLength = getStringLength(template);
-    char displayText[textLength + templateLength + 2];
-    snprintf(displayText, textLength + templateLength + 2, template, keyPress, message);
+    char *template = " [] - ";
+    int templateIndex = 0;
+    int templateLength = getStringLength(" [] - ");
+    int messageLength = getStringLength(message);
+    int keyPressLength = 1;
+    int displayTextLength = templateLength + messageLength + keyPressLength;
+    char *displayText = malloc((displayTextLength + 1) * sizeof(char));
+    for(int i; i < displayTextLength; i++){
+        if(i < 2){
+            displayText[i] = template[i];
+            templateIndex++;
+        }else if(i == 2){
+            displayText[i] = keyPress;
+        }else if(i < templateLength + 1){
+            displayText[i] = template[i - 1];
+        }else{
+            displayText[i] = message[i - templateLength - 1];
+        }
+    }
+    displayText[displayTextLength] = '\0';
     menuOption returnValue;
     returnValue.keyPress = keyPress;
     returnValue.displayText = displayText;
@@ -555,6 +570,7 @@ void mainMenuPanel(void){
     menuOptions mainMenuOptions = createMenuOptionsArrayStruct(12);
     addOptionToMenuArr(&mainMenuOptions, createMenuOption('c', "choose a file", testAction));
     addOptionToMenuArr(&mainMenuOptions, createMenuOption('q', "leave this menu", quitMenu));
+    printf("-- main menu option %i: --\n%s\n-- end --", 1, mainMenuOptions.options[1].displayText);
     addMenuOptionsToPanel(mainMenu, &mainMenuOptions);
     getchar();
 //    menuOptions myMenu = createMenuOptionsArrayStruct(3);
